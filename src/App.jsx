@@ -999,8 +999,8 @@ export default function InvestmentDashboard() {
   const shell = (children, withNav) => (
     <div style={{
       fontFamily: "'Inter', sans-serif", background: T.bgGlow, color: T.text,
-      width: "100%", maxWidth: 430, margin: "0 auto", borderRadius: 28,
-      height: 680, position: "relative", overflow: "hidden",
+      width: "100%", maxWidth: 430, margin: "0 auto", borderRadius: 0,
+      height: "100dvh", minHeight: "100vh", position: "relative", overflow: "hidden",
       transition: "background 0.3s ease, color 0.3s ease",
     }}>
       {fontImport}
@@ -1345,7 +1345,7 @@ export default function InvestmentDashboard() {
 
       {/* 7. CARDS: Investido e Faturamento */}
       <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-        <CardWrapper style={{ padding: "16px", width: 192, minWidth: 0 }}>
+        <CardWrapper style={{ padding: "16px", flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
               <div style={{ width: 26, height: 26, borderRadius: 8, background: `${T.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1385,7 +1385,7 @@ export default function InvestmentDashboard() {
         </CardWrapper>
 
         {data?.faturamento && data.faturamento.totalR$ > 0 && (
-          <CardWrapper style={{ padding: "16px", width: 192, minWidth: 0 }}>
+          <CardWrapper style={{ padding: "16px", flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <div style={{ width: 26, height: 26, borderRadius: 8, background: `${CATEGORY_COLORS.Fundos}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Banknote size={14} color={CATEGORY_COLORS.Fundos} />
@@ -1595,7 +1595,7 @@ export default function InvestmentDashboard() {
         {/* Valor em dólar e Dividendos anuais — cards lado a lado, logo após Alocação */}
         {inv && (
           <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-            <CardWrapper style={{ padding: "16px", width: 192, minWidth: 0 }}>
+            <CardWrapper style={{ padding: "16px", flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <div style={{ width: 26, height: 26, borderRadius: 8, background: `${T.positive}22`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <DollarSign size={14} color={T.positive} />
@@ -1607,7 +1607,7 @@ export default function InvestmentDashboard() {
               </div>
             </CardWrapper>
 
-            <CardWrapper style={{ padding: "16px", width: 192, minWidth: 0 }}>
+            <CardWrapper style={{ padding: "16px", flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <div style={{ width: 26, height: 26, borderRadius: 8, background: `${T.amber}22`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Star size={14} color={T.amber} />

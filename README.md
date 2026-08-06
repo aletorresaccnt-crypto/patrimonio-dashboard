@@ -33,7 +33,13 @@ Abre em `http://localhost:5173`.
    git push -u origin main
    ```
 
-   (o GitHub mostra esses comandos exatos na página do repositório recém-criado)
+   Ou, sem usar terminal: no repositório vazio criado no GitHub, use
+   **Add file → Upload files** e arraste para dentro do navegador todo o
+   conteúdo desta pasta (as pastas `src` e `public`, e os arquivos
+   `package.json`, `vite.config.js`, `index.html`, `vercel.json`,
+   `.gitignore` e `README.md`) — não a pasta em si, e não a pasta
+   `node_modules` (ela não existe aqui de propósito; é gerada
+   automaticamente no build).
 
 ## 3. Publicar na Vercel
 
@@ -42,7 +48,7 @@ Abre em `http://localhost:5173`.
 3. Selecione o repositório `patrimonio-dashboard`. A Vercel detecta automaticamente que é um projeto Vite — não precisa mudar nada nas configurações de build.
 4. Clique em **Deploy**. Em ~1 minuto você recebe uma URL do tipo `https://patrimonio-dashboard.vercel.app`.
 
-A partir daí, todo `git push` para `main` publica uma nova versão automaticamente.
+A partir daí, todo `git push` (ou upload de arquivo novo) para `main` publica uma nova versão automaticamente.
 
 ## 4. Instalar como app no Galaxy S25+ (PWA)
 
@@ -50,6 +56,11 @@ A partir daí, todo `git push` para `main` publica uma nova versão automaticame
 2. Toque no menu (⋮) no canto superior direito.
 3. Toque em **Adicionar à tela inicial** (ou **Instalar app**, dependendo da versão do Chrome).
 4. Confirme. O ícone aparece na tela inicial e abre em tela cheia, sem barra de endereço, como um app nativo.
+
+Se você já tinha instalado uma versão anterior do app, é bom removê-la da
+tela inicial e reinstalar depois de atualizar o site, para garantir que o
+Chrome carregue a versão nova (o service worker atualiza sozinho, mas às
+vezes o ícone antigo fica com um cache visual).
 
 ## 5. Usando os dados da planilha
 
@@ -71,3 +82,10 @@ src/main.jsx        → ponto de entrada + compatibilidade de armazenamento loca
 vite.config.js       → build + configuração do PWA (ícones, manifest, service worker)
 public/icons/         → ícones do app (192px e 512px)
 ```
+
+## v0.9.4 — ajustes de tela cheia mobile
+
+- Fontes (Tomorrow/Inter) agora são carregadas via `<link>` no `index.html`, em vez de `@import` em runtime — mais confiável em produção.
+- O layout deixou de ter altura fixa (era pensado para a prévia do artifact) e agora ocupa `100dvh`, a altura real da tela do celular.
+- As bordas brancas/arredondadas eram do "card" de prévia — removidas para o app ocupar a tela inteira.
+- Os dois cards lado a lado que estouravam a tela (ex: "Em dólar" / "Dividendos no ano") tinham largura fixa em pixels; agora se ajustam proporcionalmente à largura da tela.

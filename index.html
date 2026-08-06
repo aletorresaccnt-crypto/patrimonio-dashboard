@@ -2,7 +2,8 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#13171B" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -10,6 +11,32 @@
     <title>Patrimônio Dashboard</title>
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Fontes carregadas direto no head: mais confiável em produção do que -->
+    <!-- o @import injetado via <style> em runtime (que às vezes é ignorado -->
+    <!-- pelo navegador dependendo da ordem/atraso de renderização). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@100..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <style>
+      /* Reset básico: elimina a margem padrão do body (fonte da "borda branca")
+         e garante que o app ocupe 100% da altura real da tela do celular. */
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: 100%;
+        background: #13171B;
+      }
+      html, body {
+        height: 100%;
+        overflow-x: hidden;
+      }
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
