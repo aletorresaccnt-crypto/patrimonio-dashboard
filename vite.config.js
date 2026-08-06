@@ -7,7 +7,16 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["icons/icon-192.png", "icons/icon-512.png"],
+      includeAssets: [
+        "icons/icon-192.png",
+        "icons/icon-512.png",
+        "fonts/Inter-Variable.woff2",
+        "fonts/Tomorrow-Light.woff2",
+        "fonts/Tomorrow-Regular.woff2",
+        "fonts/Tomorrow-Medium.woff2",
+        "fonts/Tomorrow-SemiBold.woff2",
+        "fonts/Tomorrow-Bold.woff2"
+      ],
       manifest: {
         name: "Patrimônio Dashboard",
         short_name: "Patrimônio",
@@ -25,7 +34,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,svg,ico}"]
+        globPatterns: ["**/*.{js,css,html,png,svg,ico,woff2}"]
       }
     })
   ]

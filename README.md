@@ -83,9 +83,13 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
 public/icons/         → ícones do app (192px e 512px)
 ```
 
+## v0.9.5 — fontes locais + cards desalinhados
+
+- Fontes Tomorrow e Inter agora estão embutidas no projeto (`public/fonts`, `.woff2`), com `@font-face` declarado no `index.html`. Não depende mais do Google Fonts em runtime — carrega mais rápido e funciona offline (o service worker faz o cache delas).
+- Corrigido: quando dois cards ficavam lado a lado com conteúdo de tamanhos diferentes (ex: "Investido" / "Faturamento"), o card com menos conteúdo não esticava para acompanhar a altura do vizinho, deixando as bordas inferiores desalinhadas. Agora ambos preenchem a altura da linha corretamente.
+
 ## v0.9.4 — ajustes de tela cheia mobile
 
-- Fontes (Tomorrow/Inter) agora são carregadas via `<link>` no `index.html`, em vez de `@import` em runtime — mais confiável em produção.
 - O layout deixou de ter altura fixa (era pensado para a prévia do artifact) e agora ocupa `100dvh`, a altura real da tela do celular.
 - As bordas brancas/arredondadas eram do "card" de prévia — removidas para o app ocupar a tela inteira.
 - Os dois cards lado a lado que estouravam a tela (ex: "Em dólar" / "Dividendos no ano") tinham largura fixa em pixels; agora se ajustam proporcionalmente à largura da tela.

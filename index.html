@@ -12,14 +12,54 @@
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
-    <!-- Fontes carregadas direto no head: mais confiável em produção do que -->
-    <!-- o @import injetado via <style> em runtime (que às vezes é ignorado -->
-    <!-- pelo navegador dependendo da ordem/atraso de renderização). -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@100..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <style>
+      /* Fontes hospedadas localmente (public/fonts) em vez de carregadas do
+         Google Fonts via rede — mais rápido, funciona offline e elimina
+         qualquer bloqueio de rede/CDN externo. */
+      @font-face {
+        font-family: 'Inter';
+        src: url('/fonts/Inter-Variable.woff2') format('woff2-variations'), url('/fonts/Inter-Variable.woff2') format('woff2');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Tomorrow';
+        src: url('/fonts/Tomorrow-Light.woff2') format('woff2');
+        font-weight: 300;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Tomorrow';
+        src: url('/fonts/Tomorrow-Regular.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Tomorrow';
+        src: url('/fonts/Tomorrow-Medium.woff2') format('woff2');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Tomorrow';
+        src: url('/fonts/Tomorrow-SemiBold.woff2') format('woff2');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Tomorrow';
+        src: url('/fonts/Tomorrow-Bold.woff2') format('woff2');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+
       /* Reset básico: elimina a margem padrão do body (fonte da "borda branca")
          e garante que o app ocupe 100% da altura real da tela do celular. */
       html, body, #root {

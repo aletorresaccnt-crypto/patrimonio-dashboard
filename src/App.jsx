@@ -898,7 +898,6 @@ export default function InvestmentDashboard() {
 
   const fontImport = (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Tomorrow:wght@100..900&family=Inter:wght@400;500;600;700&display=swap');
       * { box-sizing: border-box; }
       .pdb-icon-btn:active { transform: scale(0.94); }
       .pdb-fade-in { animation: pdbFadeIn 0.4s ease both; }
@@ -989,6 +988,8 @@ export default function InvestmentDashboard() {
         backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
         borderRadius: 18,
         border: `1px solid ${T.cardBorder}`,
+        height: "100%",
+        boxSizing: "border-box",
         ...style,
       }}>
         {children}
