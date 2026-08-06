@@ -83,6 +83,10 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
 public/icons/         → ícones do app (192px e 512px)
 ```
 
+## v0.9.6 — largura dos cards pareados
+
+- Achada a causa real da largura desigual entre cards lado a lado (ex: "Em dólar" menor, "Dividendos no ano" maior, sobrando espaço à direita): o `flex: 1` estava sendo passado como propriedade de estilo para o componente `CardWrapper`, mas esse valor caía no elemento interno (o "cartão visível"), e não no elemento externo que de fato participa da divisão de espaço na linha (`display: flex`). Corrigido para o elemento externo do `CardWrapper` sempre dividir o espaço igualmente com seus vizinhos.
+
 ## v0.9.5 — fontes locais + cards desalinhados
 
 - Fontes Tomorrow e Inter agora estão embutidas no projeto (`public/fonts`, `.woff2`), com `@font-face` declarado no `index.html`. Não depende mais do Google Fonts em runtime — carrega mais rápido e funciona offline (o service worker faz o cache delas).

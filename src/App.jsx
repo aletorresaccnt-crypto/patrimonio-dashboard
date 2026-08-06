@@ -962,7 +962,7 @@ export default function InvestmentDashboard() {
   // Helper: Wrapper para cards com glow premium (VisionOS-inspired)
   // O glow fica em pseudo-elementos na div EXTERNA, o card por cima com seu fundo opaco
   const CardWrapper = ({ children, style = {}, onClick }) => (
-    <div onClick={onClick} style={{ position: "relative", borderRadius: 18 }}>
+    <div onClick={onClick} style={{ position: "relative", borderRadius: 18, flex: 1, minWidth: 0 }}>
       {/* Glow superior esquerdo */}
       <div style={{
         position: "absolute", top: "-35%", left: "-25%",
