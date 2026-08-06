@@ -83,6 +83,12 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
 public/icons/         → ícones do app (192px e 512px)
 ```
 
+## v0.9.7 — donut de doações, patrimônio e gráficos
+
+- Achado o bug real do gráfico de doações não aparecer: o código procurava por um cabeçalho de coluna "Campo"/"Mês" dentro da tabela `tbDoadosDistribuicao`, mas a tabela usa "Categoria" (igual à tabela de alocação de investimentos) — nunca batia. Corrigido para procurar "Categoria", testado direto contra sua planilha real.
+- Card do patrimônio (Home): o indicador de variação (%) agora fica abaixo do valor, no mesmo padrão do card "Investido" da tela Wallet, em vez de flutuar ao lado.
+- Gráficos de linha (patrimônio na Home, investido na Wallet): adicionada uma grade horizontal discreta, eixo X mostrando só 1 mês a cada 2 (evita a "embolação" dos 12 meses), e eixo Y com menos marcações — visual mais limpo e organizado.
+
 ## v0.9.6 — largura dos cards pareados
 
 - Achada a causa real da largura desigual entre cards lado a lado (ex: "Em dólar" menor, "Dividendos no ano" maior, sobrando espaço à direita): o `flex: 1` estava sendo passado como propriedade de estilo para o componente `CardWrapper`, mas esse valor caía no elemento interno (o "cartão visível"), e não no elemento externo que de fato participa da divisão de espaço na linha (`display: flex`). Corrigido para o elemento externo do `CardWrapper` sempre dividir o espaço igualmente com seus vizinhos.

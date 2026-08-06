@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip,
+  AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
 import {
@@ -143,6 +143,12 @@ function fmtMonth(d) {
   const date = new Date(d);
   if (Number.isNaN(date.getTime())) return "";
   return MONTH_ABBR[date.getMonth()];
+}
+// Retorna só os valores de `key` de índices pares do array — usado para exibir
+// no eixo X apenas um mês a cada dois (evita "embolar" os rótulos no eixo).
+function everyOtherTick(arr, key) {
+  if (!arr || arr.length === 0) return [];
+  return arr.filter((_, i) => i % 2 === 0).map((d) => d[key]);
 }
 function fmtDateFull(d) {
   const date = new Date(d);
@@ -327,11 +333,7 @@ function parseApiSheet(workbook) {
     const [start, end] = block;
     for (let r = start; r < end; r++) {
       const row = rows[r];
-      const idx = row.findIndex((c) => {
-        if (typeof c !== "string") return false;
-        const norm = c.trim().toLowerCase().replace(/\d+$/, "");
-        return norm === "campo" || norm === "mês" || norm === "mes";
-      });
+      const idx = row.findIndex((c) => typeof c === "string" && c.trim().toLowerCase().replace(/\d+$/, "") === "categoria");
       if (idx !== -1 && typeof row[idx + 1] === "string" && row[idx + 1].trim().toLowerCase().replace(/\d+$/, "") === "valor") {
         for (let k = r + 1; k < end; k++) {
           const rr = rows[k];
@@ -342,8 +344,8 @@ function parseApiSheet(workbook) {
           donationsDistribuicao.push({ categoria: cat, valor: Number(val), percentual: pct != null ? Number(pct) : null });
         }
         break;
+      }
     }
-  }
   }
 
   return {
@@ -1126,20 +1128,18 @@ export default function InvestmentDashboard() {
           <Info size={12} color={T.textMuted} />
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{
-              fontFamily: "'Tomorrow', sans-serif", fontSize: 40, fontWeight: 400,
-              letterSpacing: -1, lineHeight: 1.1, color: T.text,
-              ...blurIf(hideValues),
-            }}>
-              {fmtBRL(animatedPatrimonio)}
-            </div>
-            <span style={{ fontSize: 11.5, color: T.textMuted, marginTop: 5, display: "block" }}>
-              Patrimônio total
-            </span>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{
+            fontFamily: "'Tomorrow', sans-serif", fontSize: 40, fontWeight: 400,
+            letterSpacing: -1, lineHeight: 1.1, color: T.text,
+            ...blurIf(hideValues),
+          }}>
+            {fmtBRL(animatedPatrimonio)}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, flexShrink: 0, ...blurIf(hideValues) }}>
+          <span style={{ fontSize: 11.5, color: T.textMuted, marginTop: 5, display: "block" }}>
+            Patrimônio total
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, ...blurIf(hideValues) }}>
             <span style={{
               display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 700,
               color: trendColor(resumo.evolucaoMesPercentual, T),
@@ -1218,11 +1218,17 @@ export default function InvestmentDashboard() {
                     </feMerge>
                   </filter>
                 </defs>
-                <XAxis dataKey="date" tickFormatter={fmtMonth} tick={{ fill: T.textMuted, fontSize: 10, fontWeight: 500 }} axisLine={false} tickLine={false} dy={6} />
+                <CartesianGrid strokeDasharray="3 5" vertical={false} stroke={T.cardBorder} strokeOpacity={0.6} />
+                <XAxis
+                  dataKey="date" tickFormatter={fmtMonth}
+                  ticks={everyOtherTick(windowData, "date")}
+                  tick={{ fill: T.textMuted, fontSize: 10.5, fontWeight: 600 }}
+                  axisLine={{ stroke: T.cardBorder }} tickLine={false} dy={8}
+                />
                 <YAxis
                   tickFormatter={fmtAxisCompact}
                   tick={{ fill: T.textMuted, fontSize: 9.5, fontWeight: 400 }}
-                  axisLine={false} tickLine={false} width={38}
+                  axisLine={false} tickLine={false} width={38} tickCount={4}
                   domain={["dataMin - dataMin * 0.06", "dataMax + dataMax * 0.04"]}
                 />
                 <Tooltip
@@ -1506,11 +1512,17 @@ export default function InvestmentDashboard() {
                     </feMerge>
                   </filter>
                 </defs>
-                <XAxis dataKey="date" tickFormatter={fmtMonth} tick={{ fill: T.textMuted, fontSize: 10, fontWeight: 500 }} axisLine={false} tickLine={false} dy={6} />
+                <CartesianGrid strokeDasharray="3 5" vertical={false} stroke={T.cardBorder} strokeOpacity={0.6} />
+                <XAxis
+                  dataKey="date" tickFormatter={fmtMonth}
+                  ticks={everyOtherTick(history, "date")}
+                  tick={{ fill: T.textMuted, fontSize: 10.5, fontWeight: 600 }}
+                  axisLine={{ stroke: T.cardBorder }} tickLine={false} dy={8}
+                />
                 <YAxis
                   tickFormatter={fmtAxisCompact}
                   tick={{ fill: T.textMuted, fontSize: 9.5, fontWeight: 400 }}
-                  axisLine={false} tickLine={false} width={38}
+                  axisLine={false} tickLine={false} width={38} tickCount={4}
                   domain={["dataMin - dataMin * 0.06", "dataMax + dataMax * 0.04"]}
                 />
                 <Tooltip
