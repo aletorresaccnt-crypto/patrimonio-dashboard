@@ -83,6 +83,10 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
 public/icons/         → ícones do app (192px e 512px)
 ```
 
+## v0.9.8 — scroll lateral fantasma
+
+- O contêiner interno de rolagem só tinha `overflow-y: auto` definido, sem `overflow-x` explícito. Por regra do CSS, quando um eixo é "auto" e o outro fica "visible" (o padrão), o navegador converte o outro também para "auto" — criando um scroll horizontal mínimo mesmo sem conteúdo realmente vazando. Corrigido fixando `overflow-x: hidden` nesse contêiner.
+
 ## v0.9.7 — donut de doações, patrimônio e gráficos
 
 - Achado o bug real do gráfico de doações não aparecer: o código procurava por um cabeçalho de coluna "Campo"/"Mês" dentro da tabela `tbDoadosDistribuicao`, mas a tabela usa "Categoria" (igual à tabela de alocação de investimentos) — nunca batia. Corrigido para procurar "Categoria", testado direto contra sua planilha real.

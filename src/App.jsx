@@ -1007,7 +1007,7 @@ export default function InvestmentDashboard() {
       transition: "background 0.3s ease, color 0.3s ease",
     }}>
       {fontImport}
-      <div ref={scrollRef} className="pdb-scroll" style={{ height: "100%", overflowY: "auto", scrollbarWidth: "none", padding: withNav ? "22px 18px 96px" : "22px 18px 26px" }}>
+      <div ref={scrollRef} className="pdb-scroll" style={{ height: "100%", overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", padding: withNav ? "22px 18px 96px" : "22px 18px 26px" }}>
         {children}
       </div>
       {withNav && <BottomNav T={T} activeTab={activeTab} setActiveTab={changeTab} />}
