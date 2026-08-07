@@ -8,7 +8,7 @@ import {
   Upload, TrendingUp, TrendingDown, RefreshCw,
   PiggyBank, HeartHandshake, Loader2, AlertCircle, Eye, EyeOff, Sun, Moon,
   Wallet, Home, Settings, ChevronRight, Banknote, Percent, Star, Info,
-  Building2, Bitcoin, LineChart, DollarSign, Cross, Building, Users, Pin, PinOff,
+  Building2, Bitcoin, LineChart, DollarSign, Church, Building, Users, Pin, PinOff, LayoutGrid,
 } from "lucide-react";
 
 const NAME = "Alexsandro Torres";
@@ -32,7 +32,7 @@ const CATEGORY_ICONS = {
 
 // Ícones e cores para a distribuição de doações (tbDonationsDistribuition)
 const DONATION_ICONS = {
-  "Igrejas": Cross,
+  "Igrejas": Church,
   "Organizações": Building,
   "Pessoas": Users,
 };
@@ -154,6 +154,27 @@ function fmtDateFull(d) {
   const date = new Date(d);
   if (Number.isNaN(date.getTime())) return "—";
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+}
+// Formata como tempo relativo ("há 2 minutos", "há 3 horas", "ontem"...).
+// Passado ~7 dias, cai de volta para a data completa (fica estranho dizer "há 12 dias").
+// Observação: se a célula "Ultima_Atualizacao" na planilha só tiver data (sem hora),
+// a granularidade fica em dias — para "há X minutos" funcionar de verdade, o campo
+// precisa gravar data+hora (ex: fórmula =AGORA() no Excel/Sheets).
+function fmtRelativeTime(d) {
+  const date = new Date(d);
+  if (Number.isNaN(date.getTime())) return "—";
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) return fmtDateFull(date);
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffSec < 45) return "agora mesmo";
+  if (diffMin < 60) return `há ${diffMin} minuto${diffMin === 1 ? "" : "s"}`;
+  if (diffHour < 24) return `há ${diffHour} hora${diffHour === 1 ? "" : "s"}`;
+  if (diffDay === 1) return "ontem";
+  if (diffDay < 7) return `há ${diffDay} dias`;
+  return fmtDateFull(date);
 }
 
 function findLabelValue(rows, label) {
@@ -804,7 +825,15 @@ export default function InvestmentDashboard() {
   const [avatar, setAvatar] = useState(null);
   const [activeTab, setActiveTab] = useState("home");
   const [navDirection, setNavDirection] = useState(1);
+  const [, forceRelativeTimeTick] = useState(0);
   const scrollRef = useRef(null);
+
+  // Recalcula os textos de "atualizado há X minutos/horas" periodicamente,
+  // sem precisar recarregar a página.
+  useEffect(() => {
+    const id = setInterval(() => forceRelativeTimeTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
   const changeTab = useCallback((nextTab) => {
     setActiveTab((prevTab) => {
       const prevIndex = TABS.findIndex((t) => t.id === prevTab);
@@ -1105,8 +1134,8 @@ export default function InvestmentDashboard() {
             <div style={{ fontFamily: "'Tomorrow', sans-serif", fontSize: 15, fontWeight: 700, whiteSpace: "nowrap" }}>
               {getGreeting()}, {FIRST_NAME}
             </div>
-            <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2, whiteSpace: "nowrap" }}>
-              {fmtDateFull(ultimaAtualizacao)}
+            <div title={fmtDateFull(ultimaAtualizacao)} style={{ fontSize: 11, color: T.textMuted, marginTop: 2, whiteSpace: "nowrap" }}>
+              Atualizado {fmtRelativeTime(ultimaAtualizacao)}
             </div>
           </div>
         </div>
@@ -1350,25 +1379,20 @@ export default function InvestmentDashboard() {
         </div>
       </div>
 
+      {/* Divisor: Resumo */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
+        <LayoutGrid size={13} color={T.textMuted} />
+        <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Resumo</span>
+      </div>
+
       {/* 7. CARDS: Investido e Faturamento */}
       <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
         <CardWrapper style={{ padding: "16px", flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 8, background: `${T.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <PiggyBank size={14} color={T.accent} />
-              </div>
-              <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 500 }}>Investido</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 8, background: `${T.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <PiggyBank size={14} color={T.accent} />
             </div>
-            {history?.length > 1 && (
-              <DataSparkline
-                values={history.slice(-6).map((h) => h.investido)}
-                color={T.accent}
-                width={46}
-                height={20}
-                uid="investSpark"
-              />
-            )}
+            <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 500 }}>Investido</span>
           </div>
           <div style={{ fontFamily: "'Tomorrow', sans-serif", fontSize: 19, fontWeight: 400, color: T.text, marginBottom: 12, ...blurIf(hideValues) }}>
             {fmtBRL(resumo.investimentoTotal)}
@@ -1422,22 +1446,22 @@ export default function InvestmentDashboard() {
 
       {/* 8. CARD: Doações */}
       {resumo.metaDoacoes > 0 && (
-        <CardWrapper style={{ padding: "14px 16px", width: "100%", cursor: "pointer" }} onClick={() => changeTab("donations")}>
+        <CardWrapper style={{ padding: "18px 16px", width: "100%", cursor: "pointer" }} onClick={() => changeTab("donations")}>
           <button onClick={() => changeTab("donations")} style={{ display: "contents" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                  <HeartHandshake size={14} color={T.amber} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>Doações em {resumo.anoReferencia}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <HeartHandshake size={15} color={T.amber} />
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>Doações em {resumo.anoReferencia}</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 8 }}>
                   <span style={{ ...blurIf(hideValues) }}>
                     <span style={{ color: T.text, fontWeight: 700 }}>{fmtBRL(resumo.totalDoadoAno)}</span>
                     <span style={{ color: T.textMuted }}> doados</span>
                   </span>
                   <span style={{ color: T.textMuted, ...blurIf(hideValues) }}>meta {fmtBRL(resumo.metaDoacoes)}</span>
                 </div>
-                <div style={{ height: 5, borderRadius: 4, background: T.cardBorder, overflow: "hidden" }}>
+                <div style={{ height: 6, borderRadius: 4, background: T.cardBorder, overflow: "hidden" }}>
                   <div style={{ height: "100%", borderRadius: 4, width: `${Math.min(100, metaAtingida * 100)}%`, background: "linear-gradient(90deg, #023E8A 0%, #0077B6 45%, #00B4D8 100%)", transition: "width 0.8s ease" }} />
                 </div>
               </div>
@@ -1997,8 +2021,8 @@ export default function InvestmentDashboard() {
       )}
 
       <div style={{ textAlign: "center", marginTop: 8 }}>
-        <div style={{ fontSize: 11, color: T.textMuted }}>
-          Atualizado em {fmtDateFull(ultimaAtualizacao)}
+        <div title={fmtDateFull(ultimaAtualizacao)} style={{ fontSize: 11, color: T.textMuted }}>
+          Atualizado {fmtRelativeTime(ultimaAtualizacao)}
         </div>
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.cardBorder}` }}>
           <div style={{ fontFamily: "'Tomorrow', sans-serif", fontSize: 11, color: T.textMuted, letterSpacing: 0.5, opacity: 0.7 }}>

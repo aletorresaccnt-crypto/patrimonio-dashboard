@@ -83,6 +83,19 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
 public/icons/         → ícones do app (192px e 512px)
 ```
 
+## v0.10.0 — ajustes visuais (Donations e Home)
+
+- Ícone de "Igrejas" trocado de `Cross` para `Church` (lucide-react).
+- Home: novo divisor "Resumo" (ícone `LayoutGrid`) entre os cards de evolução anual e os cards de Investido/Faturamento.
+- Removida a mini sparkline dentro do card "Investido" na Home.
+- Card de Doações da Home levemente maior (padding e elementos internos um pouco mais espaçados).
+
+## v0.9.9 — "atualizado há X minutos"
+
+- A data da última atualização agora aparece em formato relativo: "agora mesmo", "há 12 minutos", "há 3 horas", "ontem" ou "há 5 dias". Passado uma semana, volta a mostrar a data completa (fica estranho dizer "há 12 dias"). A data exata continua disponível segurando/passando o mouse em cima do texto.
+- O texto se atualiza sozinho a cada 1 minuto, sem precisar recarregar a página.
+- **Importante**: isso só fica preciso em minutos/horas se a célula `Ultima_Atualizacao` da aba API tiver data **e hora**. Hoje ela parece gravar só a data (00:00) — nesse caso a granularidade fica em dias ("ontem", "há 3 dias"). Para ter "há 2 minutos" de verdade, essa célula precisa vir de uma fórmula que capture o instante exato (ex: `=AGORA()` no Excel, atualizada toda vez que você mexe na planilha).
+
 ## v0.9.8 — scroll lateral fantasma
 
 - O contêiner interno de rolagem só tinha `overflow-y: auto` definido, sem `overflow-x` explícito. Por regra do CSS, quando um eixo é "auto" e o outro fica "visible" (o padrão), o navegador converte o outro também para "auto" — criando um scroll horizontal mínimo mesmo sem conteúdo realmente vazando. Corrigido fixando `overflow-x: hidden` nesse contêiner.
