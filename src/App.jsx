@@ -264,10 +264,15 @@ function parseApiSheet(workbook) {
       find(blockPatrimonio, "Evolucao_Mes_Percentual") ??
       find(blockPatrimonio, "Evolucao_Mês_Percentual")
     ),
-    ultimaAtualizacao: find(blockResumo, "Ultima_Atualizacao"),
+    // Last_Att traz data + hora exatas (para "atualizado há X minutos" funcionar de
+    // verdade); Ultima_Atualizacao (só data) fica como alternativa para planilhas antigas.
+    ultimaAtualizacao: find(blockResumo, "Last_Att") ?? find(blockResumo, "Ultima_Atualizacao"),
     totalDoadoAno: Number(find(blockResumo, "Total_Doado_Ano")),
-    reservaDoacoes: Number(find(blockResumo, "ReservaDoacoes")),
+    reservaDoacoes: Number(find(blockResumo, "ReservadoParaDoacoes") ?? find(blockResumo, "ReservaDoacoes")),
     metaDoacoes: Number(find(blockResumo, "MetaDoacoes")),
+    destinacaoProximoMes: Number(find(blockResumo, "DestinacaoProximoMes")),
+    dadosEsseMes: Number(find(blockResumo, "DadosEsseMes")),
+    totalDoadosDesde2025: Number(find(blockResumo, "TotalDoadosDesde2025")),
     patrimonioTotal: Number(find(blockPatrimonio, "Patrimonio_Total")),
     evolucaoAnoValor: Number(find(blockPatrimonio, "Evolucao_Ano_R$")),
     evolucaoAnoPercentual: Number(find(blockPatrimonio, "Evolucao_Ano_Percentual")),
@@ -825,6 +830,7 @@ export default function InvestmentDashboard() {
   const [avatar, setAvatar] = useState(null);
   const [activeTab, setActiveTab] = useState("home");
   const [navDirection, setNavDirection] = useState(1);
+  const [donationsDetailsOpen, setDonationsDetailsOpen] = useState(false);
   const [, forceRelativeTimeTick] = useState(0);
   const scrollRef = useRef(null);
 
@@ -1854,10 +1860,10 @@ export default function InvestmentDashboard() {
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-        <StatCard T={T} icon={HeartHandshake} label="Meta anual" accent={T.amber} hidden={hideValues}
-          value={fmtBRL(resumo.metaDoacoes)} />
-        <StatCard T={T} icon={TrendingUp} label="Restante p/ meta" accent={T.accent} hidden={hideValues}
-          value={fmtBRL(restanteMeta)} />
+        <StatCard T={T} icon={PiggyBank} label="Reservado p/ doações" accent={T.amber} hidden={hideValues}
+          value={fmtBRL(resumo.reservaDoacoes)} />
+        <StatCard T={T} icon={TrendingUp} label="Destinação próx. mês" accent={T.accent} hidden={hideValues}
+          value={fmtBRL(resumo.destinacaoProximoMes)} />
       </div>
 
       {/* Distribuição das doações (tbDonationsDistribuition) — donut centralizado + lista com ícones */}
@@ -1953,17 +1959,38 @@ export default function InvestmentDashboard() {
         </CardWrapper>
       )}
 
-      {resumo.reservaDoacoes > 0 && (
-        <CardWrapper style={{ padding: "14px 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <PiggyBank size={15} color={CATEGORY_COLORS.Fundos} />
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>Reserva de doações</span>
+      {/* Card expansível com detalhes adicionais da meta de doações */}
+      <CardWrapper style={{ padding: "14px 16px", cursor: "pointer" }} onClick={() => setDonationsDetailsOpen((v) => !v)}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Info size={14} color={T.textMuted} />
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>Mais detalhes</span>
           </div>
-          <div style={{ fontFamily: "'Tomorrow', sans-serif", fontSize: 18, fontWeight: 700, ...blurIf(hideValues) }}>
-            {fmtBRL(resumo.reservaDoacoes)}
+          <ChevronRight
+            size={15} color={T.textMuted}
+            style={{ transform: donationsDetailsOpen ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.25s ease" }}
+          />
+        </div>
+        {donationsDetailsOpen && (
+          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+            {[
+              { label: "Meta anual", value: fmtBRL(resumo.metaDoacoes) },
+              { label: "Doado esse mês", value: fmtBRL(resumo.dadosEsseMes) },
+              { label: "Total doado desde 2025", value: fmtBRL(resumo.totalDoadosDesde2025) },
+              { label: "Restante p/ meta", value: fmtBRL(restanteMeta) },
+            ].map((row, i) => (
+              <div key={i} style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                paddingTop: i === 0 ? 0 : 12,
+                borderTop: i === 0 ? "none" : `1px solid ${T.cardBorder}`,
+              }}>
+                <span style={{ fontSize: 12, color: T.textMuted }}>{row.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: T.text, ...blurIf(hideValues) }}>{row.value}</span>
+              </div>
+            ))}
           </div>
-        </CardWrapper>
-      )}
+        )}
+      </CardWrapper>
     </div>
   );
 

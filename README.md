@@ -83,6 +83,13 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
 public/icons/         → ícones do app (192px e 512px)
 ```
 
+## v0.10.1 — nova estrutura da aba API (Donations) + data exata
+
+- Cards "Meta anual" e "Restante p/ meta" no topo da tela Donations trocados por "Reservado p/ doações" (`ReservadoParaDoacoes`) e "Destinação próx. mês" (`DestinacaoProximoMes`).
+- Novo card expansível ao final da tela Donations ("Mais detalhes") reunindo Meta anual, Doado esse mês (`DadosEsseMes`), Total doado desde 2025 (`TotalDoadosDesde2025`) e Restante p/ meta — toca pra abrir/fechar.
+- "Última atualização" agora lê o campo `Last_Att` (data e hora exatas) em vez de `Ultima_Atualizacao` (só data) — com isso "há X minutos/horas" passa a funcionar de verdade. Planilhas antigas sem `Last_Att` continuam funcionando (cai para `Ultima_Atualizacao`, com granularidade em dias).
+- Campo de reserva de doações agora lê `ReservadoParaDoacoes` primeiro, com `ReservaDoacoes` como alternativa para planilhas antigas.
+
 ## v0.10.0 — ajustes visuais (Donations e Home)
 
 - Ícone de "Igrejas" trocado de `Cross` para `Church` (lucide-react).
