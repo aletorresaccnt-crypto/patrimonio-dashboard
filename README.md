@@ -83,6 +83,14 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
 public/icons/         → ícones do app (192px e 512px)
 ```
 
+## v0.10.4 — legenda dinâmica + visual "premium" do gráfico
+
+- Linhas retas (`type: "linear"`) em vez de curvas suavizadas — visual mais técnico/clean.
+- Cores trocadas: "Investido" agora é o azul principal (com leve glow), "Bens" virou um cinza grafite escuro e discreto (linha `#2b2b2a`, degradê partindo do carbono `#1c1c1c`).
+- Legenda passou a ler os textos da nova tabela `tbChartLineHomeText` da aba API (linha 1 = rótulo do Investido, linha 2 = rótulo do Bens) — mudando o texto na planilha, muda no app. Se a tabela não existir na planilha, cai para "Investido"/"Bens" como antes.
+- Gráfico um pouco maior (mais presença visual) e traço do Investido mais grosso, para dar destaque à linha principal.
+- **Atenção**: não recebi a planilha nova com a tabela `tbChartLineHomeText` neste sandbox (só chegou até mim a versão anterior, sem essa tabela) — não consegui testar a leitura dos textos direto contra seus dados reais. O parser foi escrito de forma tolerante (pega as duas primeiras células de texto do bloco, ignorando palavras de cabeçalho comuns), mas por favor confira se a legenda aparece certa depois de reenviar a planilha; se não vier, me manda o arquivo de novo que eu ajusto.
+
 ## v0.10.3 — ajustes finos no gráfico Bens x Investido
 
 - Voltou o degradê sob cada linha (escuro, discreto, some até a base), cada um no tom da própria linha — azul para Bens, turquesa para Investido.

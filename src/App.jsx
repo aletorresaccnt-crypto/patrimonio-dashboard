@@ -247,6 +247,7 @@ function parseApiSheet(workbook) {
   const blockInvestDados = findTableBlock(rows, "tbInvestimentosDados");
   const blockMeta = findTableBlock(rows, "tbMeta");
   const blockDoacoesDist = findTableBlock(rows, "tbDoadosDistribuicao") || findTableBlock(rows, "tbDonationsDistribuition");
+  const blockChartLegend = findTableBlock(rows, "tbChartLineHomeText");
 
   // find() que usa o bloco quando disponível, e cai para busca global como último recurso
   const find = (block, label) => findLabelValueInBlock(rows, block, label) ?? findLabelValue(rows, label);
@@ -376,9 +377,30 @@ function parseApiSheet(workbook) {
     }
   }
 
+  // Textos da legenda do gráfico Bens x Investido (tbChartLineHomeText), definidos
+  // na planilha para poderem ser trocados sem mexer no código. Estrutura tolerante:
+  // pega as duas primeiras células de texto do bloco que não pareçam um cabeçalho
+  // genérico (ex: "Campo"/"Texto"/"Linha"). Linha 1 = série "Investido", linha 2 = "Bens".
+  let chartLegendTexts = [];
+  if (blockChartLegend) {
+    const [start, end] = blockChartLegend;
+    const headerWords = ["campo", "valor", "texto", "linha", "label", "nome"];
+    for (let r = start + 1; r < end && chartLegendTexts.length < 2; r++) {
+      const cell = rows[r].find((c) => typeof c === "string" && c.trim() !== "");
+      if (typeof cell === "string") {
+        const norm = cell.trim().toLowerCase().replace(/\d+$/, "");
+        if (!headerWords.includes(norm)) chartLegendTexts.push(cell.trim());
+      }
+    }
+  }
+  const chartLegendInvestido = chartLegendTexts[0] || "Investido";
+  const chartLegendBens = chartLegendTexts[1] || "Bens";
+
   return {
     resumo,
     history,
+    chartLegendInvestido,
+    chartLegendBens,
     distribuicao,
     donationsDistribuicao,
     faturamento,
@@ -1124,7 +1146,7 @@ export default function InvestmentDashboard() {
     );
   }
 
-  const { resumo, history, distribuicao, donationsDistribuicao, ultimaAtualizacao } = data;
+  const { resumo, history, distribuicao, donationsDistribuicao, ultimaAtualizacao, chartLegendInvestido, chartLegendBens } = data;
   const donationsTotal = (donationsDistribuicao || []).reduce((s, d) => s + (d.valor || 0), 0);
   const metaAtingida = resumo.metaDoacoes > 0 ? resumo.totalDoadoAno / resumo.metaDoacoes : 0;
   const restanteMeta = Math.max(0, resumo.metaDoacoes - resumo.totalDoadoAno);
@@ -1239,19 +1261,26 @@ export default function InvestmentDashboard() {
                   })}
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={190}>
-                <AreaChart data={windowData} margin={{ top: 10, right: 22, left: 8, bottom: 0 }}>
+              <ResponsiveContainer width="100%" height={206}>
+                <AreaChart data={windowData} margin={{ top: 14, right: 22, left: 8, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="bensGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={T.accent} stopOpacity={0.4} />
+                    <linearGradient id="investGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={T.accent} stopOpacity={0.42} />
                       <stop offset="60%" stopColor={T.accent} stopOpacity={0.08} />
                       <stop offset="100%" stopColor={T.accent} stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="investGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={CATEGORY_COLORS.FIIs} stopOpacity={0.35} />
-                      <stop offset="60%" stopColor={CATEGORY_COLORS.FIIs} stopOpacity={0.07} />
-                      <stop offset="100%" stopColor={CATEGORY_COLORS.FIIs} stopOpacity={0} />
+                    <linearGradient id="bensGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#1c1c1c" stopOpacity={0.75} />
+                      <stop offset="60%" stopColor="#1c1c1c" stopOpacity={0.18} />
+                      <stop offset="100%" stopColor="#1c1c1c" stopOpacity={0} />
                     </linearGradient>
+                    <filter id="lineGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="3.5" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
                   </defs>
                   <XAxis
                     dataKey="date" tickFormatter={fmtMonth}
@@ -1264,31 +1293,32 @@ export default function InvestmentDashboard() {
                     formatter={(v, name) => [fmtBRL(v), name]}
                   />
                   <Area
-                    type="monotone" dataKey="bens" name="Bens"
-                    stroke={T.accent} strokeWidth={2.5}
+                    type="linear" dataKey="bens" name={chartLegendBens}
+                    stroke="#2b2b2a" strokeWidth={2}
                     fill="url(#bensGrad)"
-                    dot={{ r: 4, fill: T.accent, stroke: T.bg, strokeWidth: 2 }}
-                    activeDot={{ r: 6, fill: T.accent, stroke: "#fff", strokeWidth: 2 }}
+                    dot={{ r: 3.5, fill: "#2b2b2a", stroke: T.bg, strokeWidth: 1.5 }}
+                    activeDot={{ r: 5.5, fill: "#2b2b2a", stroke: "#fff", strokeWidth: 2 }}
                     connectNulls
                   />
                   <Area
-                    type="monotone" dataKey="investido" name="Investido"
-                    stroke={CATEGORY_COLORS.FIIs} strokeWidth={2.5}
+                    type="linear" dataKey="investido" name={chartLegendInvestido}
+                    stroke={T.accent} strokeWidth={3}
                     fill="url(#investGrad)"
-                    dot={{ r: 4, fill: CATEGORY_COLORS.FIIs, stroke: T.bg, strokeWidth: 2 }}
-                    activeDot={{ r: 6, fill: CATEGORY_COLORS.FIIs, stroke: "#fff", strokeWidth: 2 }}
+                    style={{ filter: "url(#lineGlow)" }}
+                    dot={{ r: 4, fill: T.accent, stroke: T.bg, strokeWidth: 2 }}
+                    activeDot={{ r: 6.5, fill: T.accent, stroke: "#fff", strokeWidth: 2 }}
                     connectNulls
                   />
                 </AreaChart>
               </ResponsiveContainer>
-              <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 4, paddingBottom: 4 }}>
+              <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 6, paddingBottom: 4 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ width: 14, height: 2.5, borderRadius: 2, background: T.accent, display: "inline-block" }} />
-                  <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 500 }}>Bens</span>
+                  <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 500 }}>{chartLegendInvestido}</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 14, height: 2.5, borderRadius: 2, background: CATEGORY_COLORS.FIIs, display: "inline-block" }} />
-                  <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 500 }}>Investido</span>
+                  <span style={{ width: 14, height: 2.5, borderRadius: 2, background: "#2b2b2a", display: "inline-block" }} />
+                  <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 500 }}>{chartLegendBens}</span>
                 </div>
               </div>
             </CardWrapper>
