@@ -1287,10 +1287,14 @@ export default function InvestmentDashboard() {
                     tick={{ fill: T.textMuted, fontSize: 9, fontWeight: 500 }}
                     axisLine={{ stroke: T.cardBorder }} tickLine={false} dy={8}
                   />
+                  <YAxis
+                    hide domain={[9000, 16000]}
+                  />
                   <Tooltip
                     contentStyle={{ background: T.tooltipBg, border: `1px solid ${T.cardBorder}`, borderRadius: 10, fontSize: 12 }}
                     labelStyle={{ color: T.textMuted, marginBottom: 4 }} labelFormatter={fmtMonth}
                     formatter={(v, name) => [fmtBRL(v), name]}
+                    itemStyle={{ color: T.text }}
                   />
                   <Area
                     type="linear" dataKey="bens" name={chartLegendBens}
