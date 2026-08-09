@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
+  AreaChart, Area, LineChart as RechartsLineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
 import {
@@ -303,11 +303,13 @@ function parseApiSheet(workbook) {
           const dateVal = rr[idx];
           const patVal = rr[idx + 1];
           const invVal = rr[idx + 2];
+          const bensVal = rr[idx + 3];
           if (dateVal == null || patVal == null) break;
           history.push({
             date: dateVal instanceof Date ? dateVal.toISOString() : dateVal,
             patrimonio: Number(patVal),
             investido: Number(invVal),
+            bens: bensVal != null ? Number(bensVal) : null,
           });
         }
         break;
@@ -1238,49 +1240,44 @@ export default function InvestmentDashboard() {
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={190}>
-                <AreaChart data={windowData} margin={{ top: 10, right: 22, left: 8, bottom: 0 }}>
-                  <defs>
-                  <linearGradient id="patGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={T.accent} stopOpacity={0.55} />
-                    <stop offset="55%" stopColor={T.accent} stopOpacity={0.12} />
-                    <stop offset="100%" stopColor={T.accent} stopOpacity={0} />
-                  </linearGradient>
-                  <filter id="patGlow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="5" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                <CartesianGrid strokeDasharray="3 5" vertical={false} stroke={T.cardBorder} strokeOpacity={0.6} />
-                <XAxis
-                  dataKey="date" tickFormatter={fmtMonth}
-                  ticks={everyOtherTick(windowData, "date")}
-                  tick={{ fill: T.textMuted, fontSize: 10.5, fontWeight: 600 }}
-                  axisLine={{ stroke: T.cardBorder }} tickLine={false} dy={8}
-                />
-                <YAxis
-                  tickFormatter={fmtAxisCompact}
-                  tick={{ fill: T.textMuted, fontSize: 9.5, fontWeight: 400 }}
-                  axisLine={false} tickLine={false} width={38} tickCount={4}
-                  domain={["dataMin - dataMin * 0.06", "dataMax + dataMax * 0.04"]}
-                />
-                <Tooltip
-                  contentStyle={{ background: T.tooltipBg, border: `1px solid ${T.cardBorder}`, borderRadius: 10, fontSize: 12 }}
-                  labelStyle={{ color: T.textMuted }} labelFormatter={fmtMonth}
-                  formatter={(v) => [fmtBRL(v), "Patrimônio"]}
-                />
-                <Area
-                  type="monotone" dataKey="patrimonio"
-                  stroke={T.accent} strokeWidth={2.5}
-                  fill="url(#patGrad)"
-                  style={{ filter: "url(#patGlow)" }}
-                  dot={false}
-                  activeDot={{ r: 4, fill: T.accent, stroke: T.bg, strokeWidth: 2 }}
-                />
-              </AreaChart>
+                <RechartsLineChart data={windowData} margin={{ top: 10, right: 22, left: 8, bottom: 0 }}>
+                  <XAxis
+                    dataKey="date" tickFormatter={fmtMonth}
+                    ticks={everyOtherTick(windowData, "date")}
+                    tick={{ fill: T.textMuted, fontSize: 10.5, fontWeight: 600 }}
+                    axisLine={{ stroke: T.cardBorder }} tickLine={false} dy={8}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: T.tooltipBg, border: `1px solid ${T.cardBorder}`, borderRadius: 10, fontSize: 12 }}
+                    labelStyle={{ color: T.textMuted, marginBottom: 4 }} labelFormatter={fmtMonth}
+                    formatter={(v, name) => [fmtBRL(v), name]}
+                  />
+                  <Line
+                    type="monotone" dataKey="bens" name="Bens"
+                    stroke={T.accent} strokeWidth={2.5}
+                    dot={{ r: 4, fill: T.accent, stroke: T.bg, strokeWidth: 2 }}
+                    activeDot={{ r: 6, fill: T.accent, stroke: "#fff", strokeWidth: 2 }}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone" dataKey="investido" name="Investido"
+                    stroke={CATEGORY_COLORS.FIIs} strokeWidth={2.5}
+                    dot={{ r: 4, fill: CATEGORY_COLORS.FIIs, stroke: T.bg, strokeWidth: 2 }}
+                    activeDot={{ r: 6, fill: CATEGORY_COLORS.FIIs, stroke: "#fff", strokeWidth: 2 }}
+                    connectNulls
+                  />
+                </RechartsLineChart>
               </ResponsiveContainer>
+              <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 4, paddingBottom: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 14, height: 2.5, borderRadius: 2, background: T.accent, display: "inline-block" }} />
+                  <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 500 }}>Bens</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 14, height: 2.5, borderRadius: 2, background: CATEGORY_COLORS.FIIs, display: "inline-block" }} />
+                  <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 500 }}>Investido</span>
+                </div>
+              </div>
             </CardWrapper>
           );
         })()}

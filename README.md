@@ -83,6 +83,15 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
 public/icons/         → ícones do app (192px e 512px)
 ```
 
+## v0.10.2 — gráfico da Home: Bens x Investido
+
+- O gráfico de linha da Home deixou de mostrar o patrimônio total (uma linha só) e agora mostra duas linhas: "Bens" (azul principal) e "Investido" (turquesa), lidas da nova coluna `Bens2` da tabela `tbEvolucaoPatrimonio`.
+- Marcadores (bolinhas) visíveis em cada ponto, com destaque maior ao tocar/passar o mouse — no estilo da referência visual que você mandou.
+- Legenda abaixo do gráfico com as cores de cada linha.
+- Eixo Y removido (números do lado esquerdo); eixo X (meses) mantido, ainda mostrando 1 mês a cada 2.
+- Botões 6M/12M e o indicador de variação no topo do card continuam iguais, sem mudanças.
+- Alterado só o gráfico da Home — o gráfico da tela Wallet ("Evolução do investido") não foi tocado.
+
 ## v0.10.1 — nova estrutura da aba API (Donations) + data exata
 
 - Cards "Meta anual" e "Restante p/ meta" no topo da tela Donations trocados por "Reservado p/ doações" (`ReservadoParaDoacoes`) e "Destinação próx. mês" (`DestinacaoProximoMes`).
