@@ -1288,7 +1288,7 @@ export default function InvestmentDashboard() {
                     axisLine={{ stroke: T.cardBorder }} tickLine={false} dy={8}
                   />
                   <YAxis
-                    hide domain={[9000, 16000]}
+                    hide domain={["dataMin - (dataMax - DataMin) * 0.05", "dataMAX + (dataMax - dataMin) * 0.05"]}
                   />
                   <Tooltip
                     contentStyle={{ background: T.tooltipBg, border: `1px solid ${T.cardBorder}`, borderRadius: 10, fontSize: 12 }}
