@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 import {
-  AreaChart, Area, LineChart as RechartsLineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
+  AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
 import {
@@ -1240,11 +1240,22 @@ export default function InvestmentDashboard() {
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={190}>
-                <RechartsLineChart data={windowData} margin={{ top: 10, right: 22, left: 8, bottom: 0 }}>
+                <AreaChart data={windowData} margin={{ top: 10, right: 22, left: 8, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="bensGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={T.accent} stopOpacity={0.4} />
+                      <stop offset="60%" stopColor={T.accent} stopOpacity={0.08} />
+                      <stop offset="100%" stopColor={T.accent} stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="investGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={CATEGORY_COLORS.FIIs} stopOpacity={0.35} />
+                      <stop offset="60%" stopColor={CATEGORY_COLORS.FIIs} stopOpacity={0.07} />
+                      <stop offset="100%" stopColor={CATEGORY_COLORS.FIIs} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <XAxis
                     dataKey="date" tickFormatter={fmtMonth}
-                    ticks={everyOtherTick(windowData, "date")}
-                    tick={{ fill: T.textMuted, fontSize: 10.5, fontWeight: 600 }}
+                    tick={{ fill: T.textMuted, fontSize: 9, fontWeight: 500 }}
                     axisLine={{ stroke: T.cardBorder }} tickLine={false} dy={8}
                   />
                   <Tooltip
@@ -1252,21 +1263,23 @@ export default function InvestmentDashboard() {
                     labelStyle={{ color: T.textMuted, marginBottom: 4 }} labelFormatter={fmtMonth}
                     formatter={(v, name) => [fmtBRL(v), name]}
                   />
-                  <Line
+                  <Area
                     type="monotone" dataKey="bens" name="Bens"
                     stroke={T.accent} strokeWidth={2.5}
+                    fill="url(#bensGrad)"
                     dot={{ r: 4, fill: T.accent, stroke: T.bg, strokeWidth: 2 }}
                     activeDot={{ r: 6, fill: T.accent, stroke: "#fff", strokeWidth: 2 }}
                     connectNulls
                   />
-                  <Line
+                  <Area
                     type="monotone" dataKey="investido" name="Investido"
                     stroke={CATEGORY_COLORS.FIIs} strokeWidth={2.5}
+                    fill="url(#investGrad)"
                     dot={{ r: 4, fill: CATEGORY_COLORS.FIIs, stroke: T.bg, strokeWidth: 2 }}
                     activeDot={{ r: 6, fill: CATEGORY_COLORS.FIIs, stroke: "#fff", strokeWidth: 2 }}
                     connectNulls
                   />
-                </RechartsLineChart>
+                </AreaChart>
               </ResponsiveContainer>
               <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 4, paddingBottom: 4 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>

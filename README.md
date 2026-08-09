@@ -83,6 +83,12 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
 public/icons/         → ícones do app (192px e 512px)
 ```
 
+## v0.10.3 — ajustes finos no gráfico Bens x Investido
+
+- Voltou o degradê sob cada linha (escuro, discreto, some até a base), cada um no tom da própria linha — azul para Bens, turquesa para Investido.
+- Texto do eixo X um pouco menor.
+- Removida a exibição de só 1 mês a cada 2 — agora mostra os meses normalmente (isso valia só para este gráfico da Home; o da Wallet não mudou).
+
 ## v0.10.2 — gráfico da Home: Bens x Investido
 
 - O gráfico de linha da Home deixou de mostrar o patrimônio total (uma linha só) e agora mostra duas linhas: "Bens" (azul principal) e "Investido" (turquesa), lidas da nova coluna `Bens2` da tabela `tbEvolucaoPatrimonio`.
