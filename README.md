@@ -83,6 +83,21 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
 public/icons/         → ícones do app (192px e 512px)
 ```
 
+## v0.11.0 — modernização visual ousada
+
+Estrutura, posição das informações, modo claro/escuro e efeitos de transparência preservados. Mudanças de acabamento:
+
+- **Vidro de verdade nos cards**: brilho de borda superior (highlight de 1px), gradiente interno sutil e sombra de elevação. Glows externos mantidos nas mesmas intensidades.
+- **Modo claro redesenhado**: fundo azul-gelo suave e cards de vidro branco translúcido (antes era um cinza-azulado chapado). Sub-cards agora têm placa própria no tema claro.
+- **Orbes de luz ambiente** fixas atrás do conteúdo, dando profundidade ao vidro nos dois temas (bem discretas no escuro).
+- **Barra de navegação**: pílula de vidro flutuante com blur+saturação, indicador em gradiente com glow e movimento com leve "mola"; respeita a área segura do iPhone. Conteúdo desvanece suavemente sob a barra.
+- **Entrada em cascata**: as seções de cada tela sobem uma após a outra; feedback de toque (press) nos cards clicáveis e botões. Respeita `prefers-reduced-motion`.
+- **Valores hero** (Patrimônio total, Total investido, Doado no ano) com gradiente sutil de texto.
+- **Avatar** com anel em gradiente e glow; cabeçalhos de seção maiores; botões de ícone maiores.
+- **Escala de raios padronizada** (`RADIUS`) e sub-cards com cantos mais suaves.
+- **Correção de desempenho**: o `CardWrapper` estava declarado dentro do componente principal e era recriado a cada render (remontando os cards e reiniciando animações). Agora é um componente de módulo.
+- O fundo do documento e o `theme-color` agora acompanham o tema ativo (antes ficava `#13171B` no overscroll mesmo com o fundo AMOLED).
+
 ## v0.10.4 — legenda dinâmica + visual "premium" do gráfico
 
 - Linhas retas (`type: "linear"`) em vez de curvas suavizadas — visual mais técnico/clean.

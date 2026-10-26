@@ -1,0 +1,619 @@
+diff --git a/README.md b/README.md
+index 1d94030..13828a1 100644
+--- a/README.md
++++ b/README.md
+@@ -83,6 +83,21 @@ vite.config.js       → build + configuração do PWA (ícones, manifest, servi
+ public/icons/         → ícones do app (192px e 512px)
+ ```
+ 
++## v0.11.0 — modernização visual ousada
++
++Estrutura, posição das informações, modo claro/escuro e efeitos de transparência preservados. Mudanças de acabamento:
++
++- **Vidro de verdade nos cards**: brilho de borda superior (highlight de 1px), gradiente interno sutil e sombra de elevação. Glows externos mantidos nas mesmas intensidades.
++- **Modo claro redesenhado**: fundo azul-gelo suave e cards de vidro branco translúcido (antes era um cinza-azulado chapado). Sub-cards agora têm placa própria no tema claro.
++- **Orbes de luz ambiente** fixas atrás do conteúdo, dando profundidade ao vidro nos dois temas (bem discretas no escuro).
++- **Barra de navegação**: pílula de vidro flutuante com blur+saturação, indicador em gradiente com glow e movimento com leve "mola"; respeita a área segura do iPhone. Conteúdo desvanece suavemente sob a barra.
++- **Entrada em cascata**: as seções de cada tela sobem uma após a outra; feedback de toque (press) nos cards clicáveis e botões. Respeita `prefers-reduced-motion`.
++- **Valores hero** (Patrimônio total, Total investido, Doado no ano) com gradiente sutil de texto.
++- **Avatar** com anel em gradiente e glow; cabeçalhos de seção maiores; botões de ícone maiores.
++- **Escala de raios padronizada** (`RADIUS`) e sub-cards com cantos mais suaves.
++- **Correção de desempenho**: o `CardWrapper` estava declarado dentro do componente principal e era recriado a cada render (remontando os cards e reiniciando animações). Agora é um componente de módulo.
++- O fundo do documento e o `theme-color` agora acompanham o tema ativo (antes ficava `#13171B` no overscroll mesmo com o fundo AMOLED).
++
+ ## v0.10.4 — legenda dinâmica + visual "premium" do gráfico
+ 
+ - Linhas retas (`type: "linear"`) em vez de curvas suavizadas — visual mais técnico/clean.
+diff --git a/package.json b/package.json
+index cba4709..a515b6a 100644
+--- a/package.json
++++ b/package.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "patrimonio-dashboard",
+   "private": true,
+-  "version": "0.10.4",
++  "version": "0.11.0",
+   "type": "module",
+   "scripts": {
+     "dev": "vite",
+diff --git a/src/App.jsx b/src/App.jsx
+index abc0609..bb30d61 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -50,10 +50,27 @@ const DONATION_COLORS = {
+ };
+ 
+ // Paleta de marca fornecida pelo usuário, aplicada aos dois temas
++// Escala de raios (padroniza os cantos arredondados do app)
++const RADIUS = { sm: 10, md: 14, lg: 22, pill: 999 };
++
++// Texto de destaque com gradiente sutil (topo claro -> base na cor de destaque)
++const heroText = (T) => ({
++  backgroundImage: `linear-gradient(180deg, ${T.text} 0%, ${T.text} 52%, ${T.accent} 140%)`,
++  WebkitBackgroundClip: "text", backgroundClip: "text",
++  WebkitTextFillColor: "transparent", color: "transparent",
++});
++
+ const THEMES = {
+   dark: {
+     bg: "#000000",
+     bgGlow: "#000000",
++    cardSheen: "linear-gradient(160deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.015) 38%, rgba(255,255,255,0) 100%)",
++    cardEdge: "inset 0 1px 0 rgba(255,255,255,0.13)",
++    cardShadow: "0 22px 44px -26px rgba(0,0,0,0.9)",
++    navBg: "rgba(28,31,40,0.58)",
++    navShadow: "0 18px 40px -14px rgba(0,0,0,0.85)",
++    orb1: "rgba(76,124,255,0.16)",
++    orb2: "rgba(45,212,191,0.09)",
+     cardBg: "rgba(255,255,255,0.05)",
+     cardBorder: "rgba(255,255,255,0.10)",
+     tooltipBg: "rgba(19,23,27,0.95)",
+@@ -70,10 +87,18 @@ const THEMES = {
+     subCardBg: "rgba(255,255,255,0.045)",
+   },
+   light: {
+-    bg: "#FFFFFF",
+-    bgGlow: "#FFFFFF",
+-    cardBg: "rgba(215,225,236,0.55)",
+-    cardBorder: "rgba(19,23,27,0.09)",
++    bg: "#EEF2F9",
++    bgGlow: "#EEF2F9",
++    cardSheen: "linear-gradient(160deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.08) 100%)",
++    cardEdge: "inset 0 1px 0 rgba(255,255,255,0.95)",
++    cardShadow: "0 18px 38px -22px rgba(30,50,110,0.38)",
++    navBg: "rgba(255,255,255,0.72)",
++    navShadow: "0 18px 40px -16px rgba(30,50,110,0.42)",
++    orb1: "rgba(0,48,207,0.11)",
++    orb2: "rgba(45,212,191,0.16)",
++    subCardBg: "rgba(19,23,27,0.04)",
++    cardBg: "rgba(255,255,255,0.62)",
++    cardBorder: "rgba(19,23,27,0.07)",
+     tooltipBg: "rgba(255,255,255,0.97)",
+     text: "#13171B",
+     textMuted: "rgba(19,23,27,0.55)",
+@@ -462,14 +487,58 @@ function StatCard({ T, icon: Icon, label, value, sub, subPositive, accent, hidde
+   );
+ }
+ 
++// Wrapper de cards com glow premium (VisionOS-inspired).
++// Declarado FORA do componente principal: antes ele era recriado a cada render
++// (o React remontava todos os cards e reiniciava animações). O glow fica em divs na
++// camada EXTERNA; o card de vidro vem por cima, agora com brilho de borda e sombra.
++function CardWrapper({ T, children, style = {}, onClick }) {
++  return (
++    <div onClick={onClick} className={onClick ? "pdb-card-press" : undefined}
++      style={{ position: "relative", borderRadius: RADIUS.lg, flex: 1, minWidth: 0 }}>
++      {/* Glow superior esquerdo */}
++      <div style={{
++        position: "absolute", top: "-35%", left: "-25%",
++        width: "70%", height: "70%",
++        background: "radial-gradient(circle at 40% 40%, rgba(220,230,255,0.13), transparent 65%)",
++        filter: "blur(28px)",
++        pointerEvents: "none", borderRadius: "50%",
++        zIndex: 0,
++      }} />
++      {/* Glow inferior direito */}
++      <div style={{
++        position: "absolute", bottom: "-30%", right: "-20%",
++        width: "55%", height: "55%",
++        background: "radial-gradient(circle at 60% 60%, rgba(0,102,255,0.09), transparent 65%)",
++        filter: "blur(32px)",
++        pointerEvents: "none", borderRadius: "50%",
++        zIndex: 0,
++      }} />
++      {/* Card de vidro por cima */}
++      <div style={{
++        position: "relative", zIndex: 1,
++        background: T.cardBg, backgroundImage: T.cardSheen,
++        backdropFilter: "blur(18px) saturate(140%)", WebkitBackdropFilter: "blur(18px) saturate(140%)",
++        borderRadius: RADIUS.lg,
++        border: `1px solid ${T.cardBorder}`,
++        boxShadow: `${T.cardEdge}, ${T.cardShadow}`,
++        height: "100%",
++        boxSizing: "border-box",
++        ...style,
++      }}>
++        {children}
++      </div>
++    </div>
++  );
++}
++
+ function SectionHeader({ T, title, hideValues, onToggleHide }) {
+   return (
+     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+-      <span style={{ fontFamily: "'Tomorrow', sans-serif", fontSize: 18, fontWeight: 700 }}>{title}</span>
++      <span style={{ fontFamily: "'Tomorrow', sans-serif", fontSize: 24, fontWeight: 600, letterSpacing: -0.4 }}>{title}</span>
+       <button onClick={onToggleHide} className="pdb-icon-btn" style={{
+-        cursor: "pointer", width: 34, height: 34, borderRadius: 11,
+-        background: T.cardBg, border: `1px solid ${T.cardBorder}`,
+-        backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
++        cursor: "pointer", width: 38, height: 38, borderRadius: 14,
++        background: T.cardBg, backgroundImage: T.cardSheen, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardEdge,
++        backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+         display: "flex", alignItems: "center", justifyContent: "center",
+       }} title={hideValues ? "Mostrar valores" : "Ocultar valores"}>
+         {hideValues ? <EyeOff size={15} color={T.textMuted} /> : <Eye size={15} color={T.textMuted} />}
+@@ -482,33 +551,35 @@ function BottomNav({ T, activeTab, setActiveTab }) {
+   const activeIndex = TABS.findIndex((t) => t.id === activeTab);
+   return (
+     <div style={{
+-      position: "absolute", left: 34, right: 34, bottom: 14,
+-      background: T.cardBg, border: `1px solid ${T.cardBorder}`,
+-      backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)",
+-      borderRadius: 22, display: "flex", padding: "6px 6px",
+-      boxShadow: "0 10px 30px rgba(0,0,0,0.28)",
++      position: "absolute", left: 30, right: 30, bottom: "calc(14px + env(safe-area-inset-bottom, 0px))", zIndex: 3,
++      background: T.navBg, border: `1px solid ${T.cardBorder}`,
++      backdropFilter: "blur(30px) saturate(170%)", WebkitBackdropFilter: "blur(30px) saturate(170%)",
++      borderRadius: 28, display: "flex", padding: 6,
++      boxShadow: `${T.cardEdge}, ${T.navShadow}`,
+     }}>
+       <div style={{
+         position: "absolute", top: 6, bottom: 6, width: "calc(25% - 8px)",
+         left: `calc(${activeIndex} * 25% + 4px)`,
+-        background: `${T.accent}20`, borderRadius: 14,
+-        transition: "left 0.32s cubic-bezier(.4,0,.2,1)",
++        background: `linear-gradient(160deg, ${T.accent}38, ${T.accent}14)`,
++        border: `1px solid ${T.accent}3A`, borderRadius: 22,
++        boxShadow: `0 0 22px ${T.accent}33, inset 0 1px 0 rgba(255,255,255,0.14)`,
++        transition: "left 0.42s cubic-bezier(.34,1.3,.5,1)",
+       }} />
+       {TABS.map((tab) => {
+         const Icon = tab.icon;
+         const active = tab.id === activeTab;
+         return (
+-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
++          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="pdb-nav-btn" style={{
+             flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+-            background: "none", border: "none", cursor: "pointer", padding: "8px 0 7px",
++            background: "none", border: "none", cursor: "pointer", padding: "9px 0 8px",
+             position: "relative", zIndex: 1,
+           }}>
+-            <Icon size={19} color={active ? T.accent : T.textMuted} style={{
+-              transform: active ? "scale(1.1)" : "scale(1)",
+-              transition: "transform 0.28s cubic-bezier(.34,1.56,.64,1), color 0.25s ease",
++            <Icon size={20} strokeWidth={active ? 2.2 : 1.8} color={active ? T.accent : T.textMuted} style={{
++              transform: active ? "translateY(-1px) scale(1.08)" : "scale(1)",
++              transition: "transform 0.3s cubic-bezier(.34,1.56,.64,1), color 0.25s ease",
+             }} />
+             <span style={{
+-              fontSize: 8.5, fontWeight: 500, letterSpacing: 0.1,
++              fontSize: 9, fontWeight: active ? 600 : 500, letterSpacing: 0.2,
+               color: active ? T.accent : T.textMuted,
+               transition: "color 0.25s ease",
+             }}>
+@@ -802,7 +873,7 @@ function InsightsCarousel({ T, insights }) {
+     <div
+       style={{
+         background: `${toneColor}14`, border: `1px solid ${toneColor}2A`,
+-        borderRadius: 14, padding: "11px 13px 10px", marginBottom: 20, width: "100%",
++        borderRadius: 18, padding: "12px 14px 11px", marginBottom: 20, width: "100%", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", boxShadow: T.cardEdge,
+         transition: "background 0.3s ease",
+       }}
+     >
+@@ -883,6 +954,14 @@ export default function InvestmentDashboard() {
+   const animatedInvestido = useCountUp(data?.resumo?.investimentoTotal, 800, activeTab);
+   const T = THEMES[theme];
+ 
++  // Mantém o fundo do documento (overscroll/barra de status do PWA) igual ao tema ativo
++  useEffect(() => {
++    document.documentElement.style.background = T.bg;
++    document.body.style.background = T.bg;
++    const meta = document.querySelector('meta[name="theme-color"]');
++    if (meta) meta.setAttribute("content", T.bg);
++  }, [T.bg]);
++
+   useEffect(() => {
+     (async () => {
+       try {
+@@ -961,6 +1040,25 @@ export default function InvestmentDashboard() {
+     <style>{`
+       * { box-sizing: border-box; }
+       .pdb-icon-btn:active { transform: scale(0.94); }
++      .pdb-icon-btn, .pdb-nav-btn { transition: transform 0.18s ease; -webkit-tap-highlight-color: transparent; }
++      .pdb-nav-btn:active { transform: scale(0.92); }
++      .pdb-card-press { transition: transform 0.2s cubic-bezier(.22,1,.36,1); cursor: pointer; }
++      .pdb-card-press:active { transform: scale(0.982); }
++
++      /* Entrada em cascata: cada seção da tela sobe suavemente, uma após a outra */
++      .pdb-fade-in > * { animation: pdbRise 0.6s cubic-bezier(.22,1,.36,1) backwards; }
++      .pdb-fade-in > *:nth-child(1) { animation-delay: 0.02s; }
++      .pdb-fade-in > *:nth-child(2) { animation-delay: 0.07s; }
++      .pdb-fade-in > *:nth-child(3) { animation-delay: 0.12s; }
++      .pdb-fade-in > *:nth-child(4) { animation-delay: 0.17s; }
++      .pdb-fade-in > *:nth-child(5) { animation-delay: 0.22s; }
++      .pdb-fade-in > *:nth-child(6) { animation-delay: 0.27s; }
++      .pdb-fade-in > *:nth-child(7) { animation-delay: 0.32s; }
++      .pdb-fade-in > *:nth-child(n+8) { animation-delay: 0.36s; }
++      @keyframes pdbRise { from { opacity: 0; transform: translateY(16px) scale(0.985); } to { opacity: 1; transform: none; } }
++      @media (prefers-reduced-motion: reduce) {
++        .pdb-fade-in > *, .pdb-fade-in, .pdb-tab-slide-fwd, .pdb-tab-slide-back { animation: none !important; }
++      }
+       .pdb-fade-in { animation: pdbFadeIn 0.4s ease both; }
+       .pdb-scroll::-webkit-scrollbar { display: none; }
+       @keyframes pdbFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@@ -1008,9 +1106,9 @@ export default function InvestmentDashboard() {
+   );
+ 
+   const iconBtnStyle = {
+-    cursor: "pointer", width: 34, height: 34, borderRadius: 11,
+-    background: T.cardBg, border: `1px solid ${T.cardBorder}`,
+-    backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
++    cursor: "pointer", width: 38, height: 38, borderRadius: 14,
++    background: T.cardBg, backgroundImage: T.cardSheen, border: `1px solid ${T.cardBorder}`, boxShadow: T.cardEdge,
++    backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+     display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+   };
+ 
+@@ -1020,44 +1118,6 @@ export default function InvestmentDashboard() {
+     borderRadius: 18,
+   };
+ 
+-  // Helper: Wrapper para cards com glow premium (VisionOS-inspired)
+-  // O glow fica em pseudo-elementos na div EXTERNA, o card por cima com seu fundo opaco
+-  const CardWrapper = ({ children, style = {}, onClick }) => (
+-    <div onClick={onClick} style={{ position: "relative", borderRadius: 18, flex: 1, minWidth: 0 }}>
+-      {/* Glow superior esquerdo */}
+-      <div style={{
+-        position: "absolute", top: "-35%", left: "-25%",
+-        width: "70%", height: "70%",
+-        background: "radial-gradient(circle at 40% 40%, rgba(220,230,255,0.13), transparent 65%)",
+-        filter: "blur(28px)",
+-        pointerEvents: "none", borderRadius: "50%",
+-        zIndex: 0,
+-      }} />
+-      {/* Glow inferior direito */}
+-      <div style={{
+-        position: "absolute", bottom: "-30%", right: "-20%",
+-        width: "55%", height: "55%",
+-        background: "radial-gradient(circle at 60% 60%, rgba(0,102,255,0.09), transparent 65%)",
+-        filter: "blur(32px)",
+-        pointerEvents: "none", borderRadius: "50%",
+-        zIndex: 0,
+-      }} />
+-      {/* Card real por cima */}
+-      <div style={{
+-        position: "relative", zIndex: 1,
+-        background: T.cardBg,
+-        backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+-        borderRadius: 18,
+-        border: `1px solid ${T.cardBorder}`,
+-        height: "100%",
+-        boxSizing: "border-box",
+-        ...style,
+-      }}>
+-        {children}
+-      </div>
+-    </div>
+-  );
+-
+   const shell = (children, withNav) => (
+     <div style={{
+       fontFamily: "'Inter', sans-serif", background: T.bgGlow, color: T.text,
+@@ -1066,9 +1126,15 @@ export default function InvestmentDashboard() {
+       transition: "background 0.3s ease, color 0.3s ease",
+     }}>
+       {fontImport}
+-      <div ref={scrollRef} className="pdb-scroll" style={{ height: "100%", overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", padding: withNav ? "22px 18px 96px" : "22px 18px 26px" }}>
++      {/* Orbes de luz ambiente, ficam fixas atrás do conteúdo (dão profundidade ao vidro) */}
++      <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
++        <div style={{ position: "absolute", top: -140, right: -100, width: 340, height: 340, borderRadius: "50%", background: `radial-gradient(circle, ${T.orb1}, transparent 68%)`, filter: "blur(34px)" }} />
++        <div style={{ position: "absolute", top: "46%", left: -150, width: 320, height: 320, borderRadius: "50%", background: `radial-gradient(circle, ${T.orb2}, transparent 68%)`, filter: "blur(38px)" }} />
++      </div>
++      <div ref={scrollRef} className="pdb-scroll" style={{ position: "relative", zIndex: 1, height: "100%", overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", padding: withNav ? "26px 18px 118px" : "26px 18px 26px" }}>
+         {children}
+       </div>
++      {withNav && <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 120, pointerEvents: "none", zIndex: 2, background: `linear-gradient(to top, ${T.bgGlow}E6 20%, ${T.bgGlow}00)` }} />}
+       {withNav && <BottomNav T={T} activeTab={activeTab} setActiveTab={changeTab} />}
+     </div>
+   );
+@@ -1076,18 +1142,24 @@ export default function InvestmentDashboard() {
+   const avatarNode = (size = 46) => (
+     <label className="pdb-icon-btn" style={{ position: "relative", cursor: "pointer", flexShrink: 0 }} title="Alterar foto de perfil">
+       <div style={{
+-        width: size, height: size, borderRadius: "50%", overflow: "hidden",
+-        background: avatar ? "transparent" : `linear-gradient(135deg, ${T.accent}, ${CATEGORY_COLORS.Fundos})`,
+-        display: "flex", alignItems: "center", justifyContent: "center",
+-        border: `1px solid ${T.cardBorder}`,
++        width: size, height: size, borderRadius: "50%", padding: 2,
++        background: `linear-gradient(135deg, ${T.accent}, ${CATEGORY_COLORS.FIIs})`,
++        boxShadow: `0 0 20px ${T.accent}40`,
+       }}>
+-        {avatar ? (
+-          <img src={avatar} alt="Foto de perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+-        ) : (
+-          <span style={{ color: "#fff", fontWeight: 700, fontSize: size * 0.32, fontFamily: "'Tomorrow', sans-serif" }}>
+-            {NAME.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+-          </span>
+-        )}
++        <div style={{
++          width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden",
++          background: avatar ? T.bg : `linear-gradient(135deg, ${T.accent}, ${CATEGORY_COLORS.Fundos})`,
++          display: "flex", alignItems: "center", justifyContent: "center",
++          border: `2px solid ${T.bg}`,
++        }}>
++          {avatar ? (
++            <img src={avatar} alt="Foto de perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
++          ) : (
++            <span style={{ color: "#fff", fontWeight: 700, fontSize: size * 0.32, fontFamily: "'Tomorrow', sans-serif" }}>
++              {NAME.split(" ").map((n) => n[0]).slice(0, 2).join("")}
++            </span>
++          )}
++        </div>
+       </div>
+       <input type="file" accept="image/*" style={{ display: "none" }}
+         onChange={(e) => handleAvatarFile(e.target.files[0])} />
+@@ -1189,7 +1261,7 @@ export default function InvestmentDashboard() {
+ 
+         <div style={{ marginBottom: 32 }}>
+           <div style={{
+-            fontFamily: "'Tomorrow', sans-serif", fontSize: 40, fontWeight: 400,
++            fontFamily: "'Tomorrow', sans-serif", fontSize: 40, fontWeight: 400, ...heroText(T),
+             letterSpacing: -1, lineHeight: 1.1, color: T.text,
+             ...blurIf(hideValues),
+           }}>
+@@ -1223,7 +1295,7 @@ export default function InvestmentDashboard() {
+           const evoValor = first != null && last != null ? last - first : null;
+           const evoPct = first ? evoValor / first : null;
+           return (
+-            <CardWrapper style={{ padding: "14px 4px 6px", width: "100%" }}>
++            <CardWrapper T={T} style={{ padding: "14px 4px 6px", width: "100%" }}>
+               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", marginBottom: 8 }}>
+                 <div style={{ display: "flex", alignItems: "center", gap: 6, ...blurIf(hideValues) }}>
+                   {evoValor != null && (
+@@ -1333,7 +1405,7 @@ export default function InvestmentDashboard() {
+       {/* 5. CARDS: Meta mensal */}
+       {data?.meta && (
+         <div style={{ marginBottom: 14 }}>
+-          <CardWrapper style={{ padding: "16px 16px 14px", width: "100%" }}>
++          <CardWrapper T={T} style={{ padding: "16px 16px 14px", width: "100%" }}>
+             <div style={{ marginBottom: 8 }}>
+               <div style={{ fontSize: 11, color: T.textMuted, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 }}>Meta anual</div>
+               <div style={{ fontFamily: "'Tomorrow', sans-serif", fontSize: 32, fontWeight: 400, letterSpacing: -0.5, color: T.text, ...blurIf(hideValues) }}>
+@@ -1377,7 +1449,7 @@ export default function InvestmentDashboard() {
+       </div>
+       <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+         <div style={{ flex: 1, minWidth: 0 }}>
+-          <CardWrapper style={{ padding: 0, overflow: "hidden" }}>
++          <CardWrapper T={T} style={{ padding: 0, overflow: "hidden" }}>
+             <div style={{
+               padding: "14px 14px 12px",
+               background: `linear-gradient(160deg, ${CATEGORY_COLORS.FIIs}22 0%, transparent 65%)`,
+@@ -1402,7 +1474,7 @@ export default function InvestmentDashboard() {
+           </CardWrapper>
+         </div>
+         <div style={{ flex: 1, minWidth: 0 }}>
+-          <CardWrapper style={{ padding: 0, overflow: "hidden" }}>
++          <CardWrapper T={T} style={{ padding: 0, overflow: "hidden" }}>
+             <div style={{
+               padding: "14px 14px 12px",
+               background: `linear-gradient(160deg, ${CATEGORY_COLORS.FIIs}22 0%, transparent 65%)`,
+@@ -1437,7 +1509,7 @@ export default function InvestmentDashboard() {
+ 
+       {/* 7. CARDS: Investido e Faturamento */}
+       <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+-        <CardWrapper style={{ padding: "16px", flex: 1, minWidth: 0 }}>
++        <CardWrapper T={T} style={{ padding: "16px", flex: 1, minWidth: 0 }}>
+           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+             <div style={{ width: 26, height: 26, borderRadius: 8, background: `${T.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+               <PiggyBank size={14} color={T.accent} />
+@@ -1448,7 +1520,7 @@ export default function InvestmentDashboard() {
+             {fmtBRL(resumo.investimentoTotal)}
+           </div>
+           {data?.investDados && (
+-            <div style={{ background: T.subCardBg, borderRadius: 11, padding: "9px 11px" }}>
++            <div style={{ background: T.subCardBg, borderRadius: 14, padding: "10px 12px" }}>
+               <div style={{ fontSize: 10, color: T.textMuted, marginBottom: 5 }}>Rentabilidade</div>
+               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, ...blurIf(hideValues) }}>
+                 <div style={{ width: 20, height: 20, borderRadius: 6, background: trendBg(data.investDados.rentabilidadeMesR$, T), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+@@ -1466,7 +1538,7 @@ export default function InvestmentDashboard() {
+         </CardWrapper>
+ 
+         {data?.faturamento && data.faturamento.totalR$ > 0 && (
+-          <CardWrapper style={{ padding: "16px", flex: 1, minWidth: 0 }}>
++          <CardWrapper T={T} style={{ padding: "16px", flex: 1, minWidth: 0 }}>
+             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+               <div style={{ width: 26, height: 26, borderRadius: 8, background: `${CATEGORY_COLORS.Fundos}22`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                 <Banknote size={14} color={CATEGORY_COLORS.Fundos} />
+@@ -1476,7 +1548,7 @@ export default function InvestmentDashboard() {
+             <div style={{ fontFamily: "'Tomorrow', sans-serif", fontSize: 19, fontWeight: 400, color: T.text, marginBottom: 12, ...blurIf(hideValues) }}>
+               {fmtBRL(data.faturamento.totalR$)}
+             </div>
+-            <div style={{ background: T.subCardBg, borderRadius: 11, padding: "9px 11px" }}>
++            <div style={{ background: T.subCardBg, borderRadius: 14, padding: "10px 12px" }}>
+               <div style={{ fontSize: 10, color: T.textMuted, marginBottom: 5 }}>Investido</div>
+               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, ...blurIf(hideValues) }}>
+                 <div style={{ width: 20, height: 20, borderRadius: 6, background: T.cardBorder, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+@@ -1496,7 +1568,7 @@ export default function InvestmentDashboard() {
+ 
+       {/* 8. CARD: Doações */}
+       {resumo.metaDoacoes > 0 && (
+-        <CardWrapper style={{ padding: "18px 16px", width: "100%", cursor: "pointer" }} onClick={() => changeTab("donations")}>
++        <CardWrapper T={T} style={{ padding: "18px 16px", width: "100%", cursor: "pointer" }} onClick={() => changeTab("donations")}>
+           <button onClick={() => changeTab("donations")} style={{ display: "contents" }}>
+             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+               <div style={{ flex: 1, minWidth: 0 }}>
+@@ -1538,7 +1610,7 @@ export default function InvestmentDashboard() {
+             Total investido
+           </span>
+           <div style={{
+-            fontFamily: "'Tomorrow', sans-serif", fontSize: 40, fontWeight: 400,
++            fontFamily: "'Tomorrow', sans-serif", fontSize: 40, fontWeight: 400, ...heroText(T),
+             letterSpacing: -1, lineHeight: 1, marginTop: 6, color: T.text,
+             ...blurIf(hideValues),
+           }}>
+@@ -1565,7 +1637,7 @@ export default function InvestmentDashboard() {
+ 
+         {/* 3. Gráfico do investido — mesmo tratamento premium do gráfico da Home */}
+         {history?.length > 0 && (
+-          <CardWrapper style={{ padding: "18px 12px 10px", marginBottom: 14 }}>
++          <CardWrapper T={T} style={{ padding: "18px 12px 10px", marginBottom: 14 }}>
+             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14, paddingLeft: 6 }}>
+               <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Evolução do investido</span>
+               <Info size={12} color={T.textMuted} />
+@@ -1619,7 +1691,7 @@ export default function InvestmentDashboard() {
+ 
+         {/* 4. Alocação — donut centralizado no topo + lista com ícones abaixo */}
+         {distribuicao?.length > 0 && (
+-          <CardWrapper style={{ padding: "16px 16px 16px", marginBottom: 14 }}>
++          <CardWrapper T={T} style={{ padding: "16px 16px 16px", marginBottom: 14 }}>
+             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 18 }}>
+               <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Alocação</span>
+               <Info size={12} color={T.textMuted} />
+@@ -1641,7 +1713,7 @@ export default function InvestmentDashboard() {
+                 return (
+                   <div key={i} style={{
+                     position: "relative", display: "flex", alignItems: "stretch", gap: 9,
+-                    borderRadius: 12, overflow: "hidden",
++                    borderRadius: 14, overflow: "hidden",
+                     background: `linear-gradient(120deg, ${color}14 0%, transparent 75%)`,
+                     border: `1px solid ${T.cardBorder}`,
+                     padding: "10px 10px 10px 0",
+@@ -1682,7 +1754,7 @@ export default function InvestmentDashboard() {
+         {/* Valor em dólar e Dividendos anuais — cards lado a lado, logo após Alocação */}
+         {inv && (
+           <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+-            <CardWrapper style={{ padding: "16px", flex: 1, minWidth: 0 }}>
++            <CardWrapper T={T} style={{ padding: "16px", flex: 1, minWidth: 0 }}>
+               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                 <div style={{ width: 26, height: 26, borderRadius: 8, background: `${T.positive}22`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                   <DollarSign size={14} color={T.positive} />
+@@ -1694,7 +1766,7 @@ export default function InvestmentDashboard() {
+               </div>
+             </CardWrapper>
+ 
+-            <CardWrapper style={{ padding: "16px", flex: 1, minWidth: 0 }}>
++            <CardWrapper T={T} style={{ padding: "16px", flex: 1, minWidth: 0 }}>
+               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                 <div style={{ width: 26, height: 26, borderRadius: 8, background: `${T.amber}22`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                   <Star size={14} color={T.amber} />
+@@ -1710,7 +1782,7 @@ export default function InvestmentDashboard() {
+ 
+         {/* Rentabilidade (tbInvestimentosDados) — 4 mini-cards compactos, estilo referência */}
+         {inv && (
+-          <CardWrapper style={{ padding: "16px 16px 14px", marginBottom: 14 }}>
++          <CardWrapper T={T} style={{ padding: "16px 16px 14px", marginBottom: 14 }}>
+             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                 <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Rentabilidade</span>
+@@ -1732,7 +1804,7 @@ export default function InvestmentDashboard() {
+                 { label: "No ano (R$)", value: fmtBRL(inv.rentabilidadeAnoR$), signal: inv.rentabilidadeAnoR$, seed: 3 },
+                 { label: "ROI no ano", value: fmtPct(inv.roiAnoPct), signal: inv.roiAnoPct, seed: 4 },
+               ].map((tile, i) => (
+-                <div key={i} style={{ background: T.subCardBg || T.cardBorder, borderRadius: 10, padding: "8px 7px 7px", minWidth: 0 }}>
++                <div key={i} style={{ background: T.subCardBg || T.cardBorder, borderRadius: 13, padding: "8px 7px 7px", minWidth: 0 }}>
+                   <div style={{ fontSize: 8.5, color: T.textMuted, marginBottom: 5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tile.label}</div>
+                   <div style={{
+                     fontFamily: "'Tomorrow', sans-serif", fontSize: 12, fontWeight: 400,
+@@ -1774,7 +1846,7 @@ export default function InvestmentDashboard() {
+ 
+         {/* Faturamento (tbFaturamento) */}
+         {fat && fat.totalR$ > 0 && (
+-          <CardWrapper style={{ padding: "16px 16px 14px", marginBottom: 14 }}>
++          <CardWrapper T={T} style={{ padding: "16px 16px 14px", marginBottom: 14 }}>
+             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+               <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Faturamento</span>
+               {fat.refMes && (
+@@ -1831,7 +1903,7 @@ export default function InvestmentDashboard() {
+           Doado em {resumo.anoReferencia}
+         </span>
+         <span style={{
+-          fontFamily: "'Tomorrow', sans-serif", fontSize: 36, fontWeight: 400, letterSpacing: -1,
++          fontFamily: "'Tomorrow', sans-serif", fontSize: 36, fontWeight: 400, ...heroText(T), letterSpacing: -1,
+           lineHeight: 1.05, ...blurIf(hideValues),
+         }}>
+           {fmtBRL(animatedDoado)}
+@@ -1912,7 +1984,7 @@ export default function InvestmentDashboard() {
+ 
+       {/* Distribuição das doações (tbDonationsDistribuition) — donut centralizado + lista com ícones */}
+       {donationsDistribuicao?.length > 0 ? (
+-        <CardWrapper style={{ padding: "16px 16px 16px", marginBottom: 14 }}>
++        <CardWrapper T={T} style={{ padding: "16px 16px 16px", marginBottom: 14 }}>
+           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 18 }}>
+             <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Distribuição das doações</span>
+             <Info size={12} color={T.textMuted} />
+@@ -1945,7 +2017,7 @@ export default function InvestmentDashboard() {
+                 const isTop = entry.pct === maxPct && maxPct > 0;
+                 return (
+                   <div key={i} style={{
+-                    position: "relative", overflow: "hidden", borderRadius: 14,
++                    position: "relative", overflow: "hidden", borderRadius: 16, boxShadow: T.cardEdge,
+                     background: `linear-gradient(135deg, ${color}1c 0%, transparent 70%)`,
+                     border: `1px solid ${T.cardBorder}`,
+                     padding: "12px 14px",
+@@ -1992,7 +2064,7 @@ export default function InvestmentDashboard() {
+           </div>
+         </CardWrapper>
+       ) : (
+-        <CardWrapper style={{ padding: "14px 16px", marginBottom: 14 }}>
++        <CardWrapper T={T} style={{ padding: "14px 16px", marginBottom: 14 }}>
+           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+             <AlertCircle size={14} color={T.textMuted} />
+             <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>Distribuição das doações indisponível</span>
+@@ -2004,7 +2076,7 @@ export default function InvestmentDashboard() {
+       )}
+ 
+       {/* Card expansível com detalhes adicionais da meta de doações */}
+-      <CardWrapper style={{ padding: "14px 16px", cursor: "pointer" }} onClick={() => setDonationsDetailsOpen((v) => !v)}>
++      <CardWrapper T={T} style={{ padding: "14px 16px", cursor: "pointer" }} onClick={() => setDonationsDetailsOpen((v) => !v)}>
+         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+             <Info size={14} color={T.textMuted} />
+@@ -2043,7 +2115,7 @@ export default function InvestmentDashboard() {
+     <div key="settings" className="pdb-fade-in">
+       <SectionHeader T={T} title="Configurações" hideValues={hideValues} onToggleHide={() => setHideValues((v) => !v)} />
+ 
+-      <CardWrapper style={{ padding: "18px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 14 }}>
++      <CardWrapper T={T} style={{ padding: "18px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 14 }}>
+         {avatarNode(58)}
+         <div style={{ minWidth: 0 }}>
+           <div style={{ fontFamily: "'Tomorrow', sans-serif", fontSize: 15, fontWeight: 700, whiteSpace: "nowrap" }}>{NAME}</div>
+@@ -2051,7 +2123,7 @@ export default function InvestmentDashboard() {
+         </div>
+       </CardWrapper>
+ 
+-      <CardWrapper style={{ padding: "4px 16px", marginBottom: 12 }}>
++      <CardWrapper T={T} style={{ padding: "4px 16px", marginBottom: 12 }}>
+         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0" }}>
+           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+             {theme === "dark" ? <Moon size={16} color={T.textMuted} /> : <Sun size={16} color={T.textMuted} />}
+@@ -2069,7 +2141,7 @@ export default function InvestmentDashboard() {
+         </div>
+       </CardWrapper>
+ 
+-      <CardWrapper style={{ padding: "14px 16px", marginBottom: 12, cursor: "pointer" }}>
++      <CardWrapper T={T} style={{ padding: "14px 16px", marginBottom: 12, cursor: "pointer" }}>
+         <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+             {status === "parsing" ? (
+@@ -2103,7 +2175,7 @@ export default function InvestmentDashboard() {
+             Desenvolvido por Alexsandro Torres com Claude AI
+           </div>
+           <div style={{ fontSize: 9.5, color: T.textMuted, marginTop: 6, opacity: 0.45 }}>
+-            versão de teste · v0.9.3
++            versão de teste · v0.11.0
+           </div>
+         </div>
+       </div>
